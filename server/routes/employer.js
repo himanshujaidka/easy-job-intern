@@ -1,90 +1,35 @@
 const express = require("express");
 const router = express.Router();
-const jwt = require("jsonwebtoken")
-var MongoClient = require('mongodb').MongoClient;
-var url = "mongodb://localhost:27017/"
-const bcrypt = require("bcryptjs")
-const {JWT_SECRET} = require('../keys');
-const auth = require('../middleware/auth_employer.js');
-//const email = require('../utils/email');
+const {
+  signup,
+  signin,
+  logout,
+  logoutAll,
+  update
+} = require("../controller/employer.auth");
+const { createFreshersJob } = require("../controller/freshersjob");
+const { createInternship, updateInternship, getInternshipValues } = require("../controller/internships");
+const { createJob, updateJob } = require("../controller/jobs");
+const auth_employer = require("../middleware/auth_employer");
 
-const Employer = require("../models/employer");
+router.post("/signup", signup);
+router.post("/signin", signin);
+router.get("/logout", auth_employer, logout);
+router.get("/logoutAll", auth_employer, logoutAll);
 
-router.get('/', (req, res)=>{
-    res.json({message:"employer auth"})
-})
+router.post("/create-internship", auth_employer, createInternship);
+router.post("/create-job", auth_employer, createJob);
+router.post("/create-fresherjob", auth_employer, createFreshersJob);
+router.patch("/update", auth_employer, update);
 
-// SignUp       post      /auth/signup
-
-router.post("/signup",(req,res)=>{
-    const {companyName,personName,email,contact,password,passwordConfirmation} = req.body
-    if(password !== passwordConfirmation){
-        return res.json({error:"Password dosen't match"})
-    }
-    if(!companyName || !personName || !email || !contact || !password || !passwordConfirmation){
-        return res.json({error:"Please add all fields"})
-    }
-    Employer.findOne({email})
-    .then((savedUser)=>{
-        if(savedUser){
-            return res.json({error:"User already exsist"})
-        }
-        bcrypt.hash(password,10)
-        .then(async hashedpassword => {
-            const employer = new Employer({
-                companyName,
-                personName,
-                email,
-                contact,
-                password:hashedpassword
-            })
-            //await email(name, email, mobile);
-            employer.save()
-            .then(user=>{
-                res.json({message:"Saved Succcessfully",user:user})
-            }).catch(err=>{
-                console.log(err);
-            })
-        })
-      
-    })
-})
-
-// SignIn       post      /auth/signin
+router.patch("/update-internship", auth_employer, updateInternship);
+router.get("/get-internship/:postId", auth_employer, getInternshipValues);
+router.patch("/update-job", auth_employer, updateJob);
 
 
-router.post('/signin',(req,res)=>{
-    const {email,password} = req.body;
-    if(!email || !password){
-        return res.json({error:"Please Add Email or Password"})
-    }
-    
-    Employer.findOne({email})
-    .then(savedUser => {
-        if(!savedUser){
-            return res.json({error:"Invalid email or password"})
-        }
-        else{
-        bcrypt.compare(password,savedUser.password)
-        .then(doMatch=>{
-            if(doMatch){
-                // res.json({message:"SignIn successfull"})
-                const token = jwt.sign({_id:savedUser._id},JWT_SECRET)
-                const {_id,personName,email,contact,companyName} = savedUser
-               return res.json({token,user:{_id,personName,email,contact,companyName}})
-            }else{
-                return res.json({error:"Invalid Email or Password"})
-            }
-        }).catch(err=>{
-            return res.json({error:"Something Went Wrong"})
-        })
-    }
-    }).
-    catch(err=>{
-        return res.json({error:"Something Went Wrong"})
-    })
-
-})
 
 
-module.exports = router
+
+
+
+module.exports = router;

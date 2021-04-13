@@ -1,11 +1,16 @@
 import React, { useState } from "react";
-import { Button, Form, Card } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Button, Form, Card, InputGroup } from "react-bootstrap";
+import { Link, useHistory } from "react-router-dom";
 import axios from "axios";
 import checkValidity from "../../utils/checkValidation";
 import "./register.css";
+import IconButton from "@material-ui/core/IconButton";
+import Visibility from "@material-ui/icons/Visibility";
+import VisibilityOff from "@material-ui/icons/VisibilityOff";
+import toast, { Toaster } from 'react-hot-toast';
 
 const StudentSignup = () => {
+  const history = useHistory();
   //creating a dicitionary for every field of the form
   const initialState = {
     personName: {
@@ -54,6 +59,7 @@ const StudentSignup = () => {
       valid: false,
       touched: false,
     },
+    showPassword: false,
     contact: {
       value: "",
       validation: {
@@ -105,7 +111,7 @@ const StudentSignup = () => {
   const [formValues, setFormValues] = useState(initialState);
   const [signupError, setSignupError] = useState(null);
 
-  const [formIsValid, setFormIsValid] = useState(false); //boolean to check that the whole form is valid or not
+  const [formIsValid ,setFormIsValid] = useState(false); //boolean to check that the whole form is valid or not
 
   const handleChange = (e) => {
     const updatedFormValues = { ...formValues };
@@ -166,7 +172,12 @@ const StudentSignup = () => {
         })
         .then((res) => {
           console.log(res.data.user);
-          alert(res.data.message);
+          // alert(res.data.message);
+          const notify = () => toast(res.data.message);
+          notify();
+          if(res.data.user){
+            history.pushState("/student-login");
+          }
         })
         .catch((err) => {
           console.log(err);
@@ -174,10 +185,16 @@ const StudentSignup = () => {
     }
     setFormValues(initialState);
   };
+  const togglePasswordVisiblity = () => { // to handle visibility of passsword 
+    
+      setFormValues({...formValues, showPassword: !(formValues.showPassword)});
+    
+  };
 
   return (
     <>
       <div style={{ padding: "4vh 0" }}>
+      <Toaster />
         <Card
           style={{
             width: "40vw",
@@ -258,6 +275,7 @@ const StudentSignup = () => {
                 controlId="formBasicPassword"
               >
                 <Form.Label style={{ fontWeight: "bold" }}>Password</Form.Label>
+                <InputGroup>
                 <Form.Control
                   className={`${
                     !formValues.password.valid && formValues.password.touched
@@ -265,7 +283,7 @@ const StudentSignup = () => {
                       : ""
                   }`}
                   style={{ borderColor: "#6EE2CD", color: "#000000" }}
-                  type="password"
+                  type={formValues.showPassword?"text":"password"}
                   placeholder="Password"
                   name="password"
                   value={formValues.password.value}
@@ -276,6 +294,16 @@ const StudentSignup = () => {
                     {formValues.password.errorMessage}
                   </span>
                 )}
+                <InputGroup.Append>
+                      <InputGroup.Text style={{borderColor: "#ffc107", color: "#000000", height: "37px", width: "28px", paddingLeft:"1px",paddingRight:"1px" }}>
+                        <IconButton style={{width: "25px"}}
+                          onClick={togglePasswordVisiblity}
+                        >
+                          {formValues.showPassword ? <Visibility /> : <VisibilityOff />}
+                        </IconButton> 
+                      </InputGroup.Text>
+                    </InputGroup.Append>
+                </InputGroup>
               </Form.Group>
 
               {/* Confirm Password */}
@@ -286,25 +314,36 @@ const StudentSignup = () => {
                 <Form.Label style={{ fontWeight: "bold" }}>
                   Confirm Password
                 </Form.Label>
-                <Form.Control
-                  className={`${
-                    !formValues.passwordConfirmation.valid &&
-                    formValues.passwordConfirmation.touched
-                      ? "input-error"
-                      : ""
-                  }`}
-                  style={{ borderColor: "#6EE2CD", color: "#000000" }}
-                  type="password"
-                  placeholder="Re-enter Password"
-                  name="passwordConfirmation"
-                  value={formValues.passwordConfirmation.value}
-                  onChange={handleChange}
-                />
-                {formValues.passwordConfirmation.errorMessage && (
-                  <span className="error">
-                    {formValues.passwordConfirmation.errorMessage}
-                  </span>
-                )}
+                <InputGroup>
+                  <Form.Control
+                    className={`${
+                      !formValues.passwordConfirmation.valid &&
+                      formValues.passwordConfirmation.touched
+                        ? "input-error"
+                        : ""
+                    }`}
+                    style={{ borderColor: "#6EE2CD", color: "#000000" }}
+                    type="password"
+                    placeholder="Re-enter Password"
+                    name="passwordConfirmation"
+                    value={formValues.passwordConfirmation.value}
+                    onChange={handleChange}
+                  />
+                  {formValues.passwordConfirmation.errorMessage && (
+                    <span className="error">
+                      {formValues.passwordConfirmation.errorMessage}
+                    </span>
+                  )}
+                  <InputGroup.Append>
+                    <InputGroup.Text style={{borderColor: "#ffc107", color: "#000000", height: "37px", width: "28px", paddingLeft:"1px",paddingRight:"1px" }}>
+                      <IconButton style={{width: "25px"}}
+                          onClick={togglePasswordVisiblity}
+                      >
+                        {formValues.showPassword ? <Visibility /> : <VisibilityOff />}
+                      </IconButton> 
+                    </InputGroup.Text>
+                  </InputGroup.Append>
+                </InputGroup>
               </Form.Group>
 
               {/* Contact Number */}
@@ -435,7 +474,7 @@ const StudentSignup = () => {
               {/* Already a user? */}
               <Form.Group style={{ textAlign: "left", fontSize: "1.5vh" }}>
                 <Link to="/student-login">
-                  <a style={{ fontWeight: "bold" }}>
+                  <a href="/#" style={{ fontWeight: "bold" }}>
                     Already have an account? Sign in
                   </a>
                 </Link>
@@ -453,7 +492,6 @@ const StudentSignup = () => {
                 style={{ color: "#6EE2CD", fontWeight: "bold" }}
                 variant="secondary"
                 type="submit"
-                disabled={!formIsValid}
               >
                 Register
               </Button>
